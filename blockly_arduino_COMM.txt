@@ -1,0 +1,194 @@
+if ((InterfaceS2A->auto_detect) && (registre1->ValueExists("0")||registre2->ValueExists("0")||registre3->ValueExists("0")||registre4->ValueExists("0")))
+	{
+	EtatDetect = true;
+	if (registre1->ValueExists("0")) NumDetectedCard = 1;
+	if (registre2->ValueExists("0")) NumDetectedCard = 2;
+	if (registre3->ValueExists("0")) NumDetectedCard = 3;  
+	if (registre4->ValueExists("0")) NumDetectedCard = 4;
+	NbPortsCOM = ListPortCOM();
+	}
+	else
+		{
+		EtatDetect = false;
+		NumDetectedCard = 0;
+		InterfaceS2A->MenuConnect->Visible = false;
+		InterfaceS2A->MenuUnconnect->Visible = true;
+		if (InterfaceS2A->auto_detect) {          
+			//InterfaceS2A->TrayIcon->BalloonHint = InterfaceS2A->Popup->Items->Strings[11];
+			//InterfaceS2A->TrayIcon->BalloonFlags = bfWarning;
+			InterfaceS2A->port=0;
+			InterfaceS2A->INI->WriteInteger("port COM", "port", 0);
+			InterfaceS2A->MenuUnconnect->Caption = InterfaceS2A->MenuConnect_NumCOM;
+			} else {
+				InterfaceS2A->MenuUnconnect->Caption = InterfaceS2A->MenuConnect_NumCOM + " ->" + IntToStr(InterfaceS2A->INI->ReadInteger("port COM", "port", 0));
+			}
+		}
+if (((EtatDetectAvant != EtatDetect)||(NbPortsCOM != NbPortsCOMAvant))&&(InterfaceS2A->auto_detect)) {
+	//InterfaceS2A->TrayIcon->ShowBalloonHint();
+	switch(NumDetectedCard)
+	{
+	case 0:
+		{
+		InterfaceS2A->MenuConnect->Visible = false;
+		InterfaceS2A->MenuUnconnect->Visible = true;
+		InterfaceS2A->port=0;
+		InterfaceS2A->INI->WriteInteger("port COM", "port", 0);
+		InterfaceS2A->MenuUnconnect->Caption = InterfaceS2A->MenuConnect_NumCOM + " ->" + IntToStr(InterfaceS2A->INI->ReadInteger("port COM", "port", 0));
+		//InterfaceS2A->StopProcess();
+		}
+	case 1:
+		{
+		//valable pour cartes Arduino seules
+		//test de la lecture de la valeur de la chaîne tronquée de 40 caractères
+		//à partir du 13ème pour ne garder que le VID
+		//ch340 port chinois, 2341 arduino, 2A03 leonardo, 0403 duemilanove
+		//obligation de 2 tests pour minuscules compatibilité Windows XP
+		if (((registre1->ReadString("0").Delete(13,40))=="USB\\VID_2341")||
+			((registre1->ReadString("0").Delete(13,40))=="USB\\Vid_2341")||
+			((registre1->ReadString("0").Delete(13,40))=="USB\\VID_2A03")||
+			((registre1->ReadString("0").Delete(13,40))=="USB\\Vid_2a03")||
+			((registre1->ReadString("0").Delete(13,40))=="USB\\VID_1A86")||
+			((registre1->ReadString("0").Delete(13,40))=="USB\\Vid_1a86"))
+			{
+			TRegistry *registreCOM = new TRegistry();
+			registreCOM->RootKey = HKEY_LOCAL_MACHINE;
+			InterfaceS2A->MenuConnect->Visible = true;
+			InterfaceS2A->MenuUnconnect->Visible = false;
+			registreCOM->OpenKeyReadOnly("HARDWARE\\DEVICEMAP\\SERIALCOMM");
+			InterfaceS2A->port=StrToInt(registreCOM->ReadString("\\Device\\USBSER000").Delete(1,3));
+			InterfaceS2A->MenuConnect->Caption = InterfaceS2A->MenuConnect_NumCOM + " " + IntToStr(InterfaceS2A->port);
+			InterfaceS2A->INI->WriteInteger("port COM", "port", InterfaceS2A->port);
+			delete registreCOM;
+			InterfaceS2A->rDuino();
+			}
+		}
+	case 2:
+		{
+		//valable pour cartes Arduino avec puce FTDI   VID = 0403 , PID = 6001, 6010 ou 6011
+		//test de la lecture de la valeur de la chaîne tronquée de 41 caractères
+		//à partir du 13ème pour ne garder que le VID
+		//obligation de 2 tests pour minuscules compatibilité Windows XP
+		if (((registre2->ReadString("0").Delete(13,41))=="USB\\VID_0403")||
+			((registre2->ReadString("0").Delete(13,41))=="USB\\Vid_0403"))
+			{
+			TRegistry *registreCOM = new TRegistry();
+			registreCOM->RootKey = HKEY_LOCAL_MACHINE;
+			InterfaceS2A->MenuConnect->Visible = true;
+			InterfaceS2A->MenuUnconnect->Visible = false;
+			registreCOM->OpenKeyReadOnly("HARDWARE\\DEVICEMAP\\SERIALCOMM");
+			InterfaceS2A->port=StrToInt(registreCOM->ReadString("\\Device\\VCP0").Delete(1,3));
+			InterfaceS2A->MenuConnect->Caption = InterfaceS2A->MenuConnect_NumCOM + " " + IntToStr(InterfaceS2A->port);
+			InterfaceS2A->INI->WriteInteger("port COM", "port", InterfaceS2A->port);
+			delete registreCOM;
+			InterfaceS2A->rDuino();
+			}
+		}
+	case 3:
+		{
+		//valable pour cartes Arduino seules
+		//test de la lecture de la valeur de la chaîne tronquée de 40 caractères
+		//à partir du 13ème pour ne garder que le VID
+		//ch340 port chinois, 2341 arduino, 2A03 leonardo, 0403 duemilanove
+		//obligation de 2 tests pour minuscules compatibilité Windows XP
+		if (((registre3->ReadString("0").Delete(13,46))=="USB\\VID_1A86")||
+			((registre3->ReadString("0").Delete(13,46))=="USB\\Vid_1a86"))
+			{
+			TRegistry *registreCOM = new TRegistry();
+			registreCOM->RootKey = HKEY_LOCAL_MACHINE;
+			InterfaceS2A->MenuConnect->Visible = true;
+			InterfaceS2A->MenuUnconnect->Visible = false;
+			registreCOM->OpenKeyReadOnly("HARDWARE\\DEVICEMAP\\SERIALCOMM");
+			InterfaceS2A->port=StrToInt(registreCOM->ReadString("\\Device\\Serial2").Delete(1,3));
+			InterfaceS2A->MenuConnect->Caption = InterfaceS2A->MenuConnect_NumCOM + " " + IntToStr(InterfaceS2A->port);
+			InterfaceS2A->INI->WriteInteger("port COM", "port", InterfaceS2A->port);
+			delete registreCOM; 
+			InterfaceS2A->rDuino();
+			}
+		} 
+	case 4:
+		{
+		//valable pour cartes Arduino seules
+		//test de la lecture de la valeur de la chaîne tronquée de 40 caractères
+		//à partir du 13ème pour ne garder que le VID
+		//obligation de 2 tests pour minuscules compatibilité Windows XP
+		if (((registre4->ReadString("0").Delete(13,40))=="USB\\VID_10C4")||
+			((registre4->ReadString("0").Delete(13,40))=="USB\\Vid_10c4"))
+			{
+			TRegistry *registreCOM = new TRegistry();
+			registreCOM->RootKey = HKEY_LOCAL_MACHINE;
+			InterfaceS2A->MenuConnect->Visible = true;
+			InterfaceS2A->MenuUnconnect->Visible = false;
+			registreCOM->OpenKeyReadOnly("HARDWARE\\DEVICEMAP\\SERIALCOMM");
+			InterfaceS2A->port=StrToInt(registreCOM->ReadString("\\Device\\Silabser0").Delete(1,3));
+			InterfaceS2A->MenuConnect->Caption = InterfaceS2A->MenuConnect_NumCOM + " " + IntToStr(InterfaceS2A->port);
+			InterfaceS2A->INI->WriteInteger("port COM", "port", InterfaceS2A->port);
+			delete registreCOM;
+			InterfaceS2A->rDuino();
+			}
+		}
+	}
+}
+delete registre1;
+delete registre2;
+delete registre3;
+delete registre4;
+}
+
+//---------------------------------------------------------------------------
+int __fastcall TestCarte::ListPortCOM()
+{
+TStringList* availableComPorts = new TStringList();    
+TRegistry *Registry = new TRegistry();
+AnsiString nameComPorts;
+ 
+Registry->RootKey = HKEY_LOCAL_MACHINE;
+Registry->OpenKeyReadOnly("HARDWARE\\DEVICEMAP\\SERIALCOMM");
+Registry->GetValueNames(availableComPorts);
+NbPortsCOM = availableComPorts->Count;
+if ((NbPortsCOM != NbPortsCOMAvant)||(InterfaceS2A->relaunchDetect)) {
+	NbPortsCOMDetected = 0;
+	bool PortCOM_OK = false;
+	port_COM->MemoListe->Clear();
+	InterfaceS2A->ListePortsCOM->Caption = " -> ";
+	for (int i(0); i < availableComPorts->Count; i++)
+	  {
+	  if 	((availableComPorts->Strings[i].Delete(15,3) == "\\Device\\USBSER")
+			||(availableComPorts->Strings[i].Delete(12,3) == "\\Device\\VCP")
+			||(availableComPorts->Strings[i].Delete(15,3) == "\\Device\\Serial")
+			||(availableComPorts->Strings[i].Delete(17,3) == "\\Device\\Silabser"))
+			{
+			//value COMx
+			//port_COM2->MemoListe->Lines->Add(Registry->ReadString(availableComPorts->Strings[i]).Delete(1,3));
+			port_COM->MemoListe->Lines->Add(Registry->ReadString(availableComPorts->Strings[i]).Delete(1,3));
+			if (InterfaceS2A->port == Registry->ReadString(availableComPorts->Strings[i]).Delete(1,3)) PortCOM_OK = true;
+			//name \\Device\\xxxx
+			//port_COM2->MemoListe->Lines->Add(availableComPorts->Strings[i]);
+			NbPortsCOMDetected++;
+			InterfaceS2A->ListePortsCOM->Caption += Registry->ReadString(availableComPorts->Strings[i]).Delete(1,3) + " - ";
+			}
+	  }
+	if (NbPortsCOMDetected > 1) {
+		InterfaceS2A->ListePortsCOM->Visible = true;
+		port_COM->MemoListe->Height = 19 + port_COM->MemoListe->Lines->Count*23,396;
+		port_COM->ClientHeight = port_COM->MemoListe->Top + port_COM->MemoListe->Height;
+		port_COM->MemoListe->Enabled = true;
+		port_COM->MemoListe->Visible = true;
+		}
+		else {
+			InterfaceS2A->ListePortsCOM->Visible = false;
+			port_COM->Height = 104;
+			port_COM->MemoListe->Visible = false;
+			port_COM->MemoListe->Enabled = false;
+		}
+	InterfaceS2A->relaunchDetect = false;
+	//if Arduino connected is unplugged, relaunch rDuino
+	if (!PortCOM_OK) {
+		InterfaceS2A->relaunchNwjs = true;
+		InterfaceS2A->rDuino();
+		InterfaceS2A->relaunchNwjs = false;
+		}
+	}
+RegCloseKey(Registry);
+delete Registry;
+return (availableComPorts->Count);
+}
