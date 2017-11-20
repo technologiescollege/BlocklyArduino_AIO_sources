@@ -69,5 +69,19 @@
     <Transaction>2017/07/23 05:41:11.389.cpp,F:\ZZZzzz\Projets Borland Studio\blockly@rduino_AIO_agent\Unit1.cpp=F:\ZZZzzz\Projets Borland Studio\blockly@rduino_AIO_agent\Welcome.cpp</Transaction>
     <Transaction>2017/07/23 05:41:11.390.h,F:\ZZZzzz\Projets Borland Studio\blockly@rduino_AIO_agent\Unit1.h=F:\ZZZzzz\Projets Borland Studio\blockly@rduino_AIO_agent\Welcome.h</Transaction>
     <Transaction>2017/07/23 05:41:11.390.dfm,F:\ZZZzzz\Projets Borland Studio\blockly@rduino_AIO_agent\Unit1.dfm=F:\ZZZzzz\Projets Borland Studio\blockly@rduino_AIO_agent\Welcome.dfm</Transaction>
+    <Transaction>2017/11/20 16:03:25.891.cpp,F:\Logiciels\Projets\blockly@rduino_AIO_agent\Detect.cpp=F:\Logiciels\Projets\blockly@rduino_AIO_agent\DetectCard.cpp</Transaction>
+    <Transaction>2017/11/20 16:03:25.891.h,F:\Logiciels\Projets\blockly@rduino_AIO_agent\Detect.h=F:\Logiciels\Projets\blockly@rduino_AIO_agent\DetectCard.h</Transaction>
+    <Transaction>2017/11/20 16:18:13.183.cpp,F:\Logiciels\Projets\blockly@rduino_AIO_agent\splash.cpp=F:\Logiciels\Projets\blockly@rduino_AIO_agent\splashScreenUpdate.cpp</Transaction>
+    <Transaction>2017/11/20 16:18:13.183.h,F:\Logiciels\Projets\blockly@rduino_AIO_agent\splash.h=F:\Logiciels\Projets\blockly@rduino_AIO_agent\splashScreenUpdate.h</Transaction>
+    <Transaction>2017/11/20 16:18:13.183.dfm,F:\Logiciels\Projets\blockly@rduino_AIO_agent\splash.dfm=F:\Logiciels\Projets\blockly@rduino_AIO_agent\splashScreenUpdate.dfm</Transaction>
+    <Transaction>2017/11/20 16:18:19.727.cpp,F:\Logiciels\Projets\blockly@rduino_AIO_agent\Welcome.cpp=F:\Logiciels\Projets\blockly@rduino_AIO_agent\splashScreenWelcome.cpp</Transaction>
+    <Transaction>2017/11/20 16:18:19.727.h,F:\Logiciels\Projets\blockly@rduino_AIO_agent\Welcome.h=F:\Logiciels\Projets\blockly@rduino_AIO_agent\splashScreenWelcome.h</Transaction>
+    <Transaction>2017/11/20 16:18:19.727.dfm,F:\Logiciels\Projets\blockly@rduino_AIO_agent\Welcome.dfm=F:\Logiciels\Projets\blockly@rduino_AIO_agent\splashScreenWelcome.dfm</Transaction>
+    <Transaction>2017/11/20 16:20:13.392.cpp,F:\Logiciels\Projets\blockly@rduino_AIO_agent\question_port_COM.cpp=F:\Logiciels\Projets\blockly@rduino_AIO_agent\popup_port_COM.cpp</Transaction>
+    <Transaction>2017/11/20 16:20:13.392.h,F:\Logiciels\Projets\blockly@rduino_AIO_agent\question_port_COM.h=F:\Logiciels\Projets\blockly@rduino_AIO_agent\popup_port_COM.h</Transaction>
+    <Transaction>2017/11/20 16:20:13.392.dfm,F:\Logiciels\Projets\blockly@rduino_AIO_agent\question_port_COM.dfm=F:\Logiciels\Projets\blockly@rduino_AIO_agent\popup_port_COM.dfm</Transaction>
+    <Transaction>2017/11/20 16:48:02.581.cpp,F:\Logiciels\Projets\blockly@rduino_AIO_agent\proxy.cpp=F:\Logiciels\Projets\blockly@rduino_AIO_agent\popup_proxy.cpp</Transaction>
+    <Transaction>2017/11/20 16:48:02.581.h,F:\Logiciels\Projets\blockly@rduino_AIO_agent\proxy.h=F:\Logiciels\Projets\blockly@rduino_AIO_agent\popup_proxy.h</Transaction>
+    <Transaction>2017/11/20 16:48:02.581.dfm,F:\Logiciels\Projets\blockly@rduino_AIO_agent\proxy.dfm=F:\Logiciels\Projets\blockly@rduino_AIO_agent\popup_proxy.dfm</Transaction>
   </Transactions>
 </BorlandProject>

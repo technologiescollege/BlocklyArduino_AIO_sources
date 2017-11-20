@@ -11721,7 +11721,7 @@ object InterfaceS2A: TInterfaceS2A
       end
       object Redmarrerlenavigateur1: TMenuItem
         Caption = 'Red'#233'marrer le navigateur'
-        OnClick = BrowserLaunch
+        OnClick = BrowserLaunchClick
       end
       object s2aio_window: TMenuItem
         Caption = 'Voir la fen'#234'tre des scripts'

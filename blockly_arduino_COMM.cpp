@@ -21,18 +21,18 @@ using namespace std;  //pour les traductions
 #include <registry.hpp>
 
 #include "blockly_arduino_COMM.h"
-#include "question_port_COM.h"
-#include "splash.h"            
-#include "Welcome.h"
-#include "proxy.h"
-#include "Detect.h"     
+#include "popup_port_COM.h"    
+#include "popup_proxy.h"
+#include "splashScreenUpdate.h"
+#include "splashScreenWelcome.h"
+#include "DetectCard.h"
 #include "DetectBrowser.h"
+
 #pragma hdrstop
 #pragma package(smart_init)
 #pragma resource "*.dfm"
 
 TInterfaceS2A *InterfaceS2A;
-//---------------------------------------------------------------------------
 
 SHELLEXECUTEINFO ShExecRDuino;
 SHELLEXECUTEINFO ShExecPymata;
@@ -50,7 +50,7 @@ AnsiString arg="";
 TStringList *Aides = new TStringList;
 TStringList *Docs = new TStringList;
 TStringList *Extensions = new TStringList;
-
+//thread des autodtections
 TestCarte *ThreadTestArduino = new TestCarte(CREATE_SUSPENDED);
 BrowserDetect *ThreadDetectBrowserClose = new BrowserDetect(CREATE_SUSPENDED);
 
@@ -94,10 +94,10 @@ void __fastcall TInterfaceS2A::InitINI()
   TerminateProcess(ShExecNwjs.hProcess, 0);
   MenuConnect->Visible = false;
   //écriture dans le fichier INI des variables utiles
-  INI->WriteInteger("langue", "langue", 0); //dans le fichier label.xml, à la balise <Langues>, cela correspond au n° du rang de la langue
+  INI->WriteInteger("langue", "langue", 0); //dans le fichier labels.xml, à la balise <Langues>, cela correspond au n° du rang de la langue
   //dossiers à utiliser pour les documents
   INI->WriteString("locate Documentation", "locate_doc", ExtractFilePath(Application->ExeName) + "documentation\\"); //chemin par défaut pour initialiser
-  INI->WriteInteger("port COM", "port", "");      //port par défaut pour initialiser
+  INI->WriteInteger("port COM", "port", 0);      //port par défaut pour initialiser
   INI->WriteBool("voir_scripts", "fenetre_DOS", false);
   INI->WriteBool("AutoDetect", "auto detect Arduino", true);
   INI->WriteString("URL", "URL", "");
@@ -108,26 +108,26 @@ void __fastcall TInterfaceS2A::InitINI()
   INI->WriteString("proxy", "password", "");
   GetOSversion(0);
   Sleep(500);
-  BrowserLaunch(0);
+  BrowserRelaunch(0);
 }
 //---------------------------------------------------------------------------
 __fastcall TInterfaceS2A::TInterfaceS2A(TComponent* Owner)
 	: TForm(Owner)
 {
-
   SplashScreen = new TSplashScreen(NULL); // Crée la fiche dynamiquement
   POINT Ecran = {GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)};
   SplashScreen->Left = (Ecran.x)/2 - (SplashScreen->Width)/2;
   SplashScreen->Top = (Ecran.y)/2 - (SplashScreen->Height)/2;
   SplashScreen->Show(); // Affiche la fiche
   SplashScreen->Repaint();
+
   //appel à la procédure pour gérer les langues
-  AnsiString file = ExtractFilePath(Application->ExeName) + "label.xml";
+  AnsiString fileLanguage = ExtractFilePath(Application->ExeName) + "tools\\labels.xml";
   langue = new GestionLangue;
-  langue->Init(InterfaceS2A->Langue1,file.c_str(),(ptrOnClick)&Langue1Click);
+  langue->Init(InterfaceS2A->Langue1,fileLanguage.c_str(),(ptrOnClick)&Langue1Click);
 
   UpdateLog = new TIniFile(ExtractFilePath(Application->ExeName)+ "tools\\update.log");
-  INI = new TIniFile(ExtractFilePath(Application->ExeName)+ "blocklyarduino.ini");
+  INI = new TIniFile(ExtractFilePath(Application->ExeName)+ "blocklyArduino.ini");
   choix_langue=INI->ReadInteger("langue", "langue", 0); 
   //après l'initialisation des langues, le système pioche la langue précédemment sélectionnée
   langue->Change(choix_langue);
@@ -137,7 +137,7 @@ __fastcall TInterfaceS2A::TInterfaceS2A(TComponent* Owner)
   MenuConnect_NumCOM = Popup->Items->Strings[10];
 
   //vérification de l'existence du fichier INI, sinon le recréé
-  if (!FileExists(ExtractFilePath(Application->ExeName)+ "blocklyarduino.ini"))
+  if (!FileExists(ExtractFilePath(Application->ExeName)+ "blocklyArduino.ini"))
 	 InitINI();
 
   //lecture du fichier INI
@@ -184,6 +184,11 @@ __fastcall TInterfaceS2A::TInterfaceS2A(TComponent* Owner)
   //initialisation quasi auto
   if ((!auto_detect)&&(INI->ReadInteger("port COM", "port", 0)!=0)) rDuino();
 
+  INI_Version_new = new TIniFile(ExtractFilePath(Application->ExeName)+ "tools\\version.txt");
+  INI_Version_old = new TIniFile(ExtractFilePath(Application->ExeName)+ "wwwBlockly@rduino\\core_BlocklyArduino\\version.txt");
+  INI_Version_new->WriteString("release", "version", INI_Version_old->ReadString("release", "version", ""));
+  INI_Version_new->WriteInteger("update", "date", INI_Version_old->ReadInteger("update", "date", 0));
+
   if (CompareVersion()==true) {
 	updateMenu->Checked = true;
 	UpdateLog->WriteBool("NewVersion", "detected", true);
@@ -193,7 +198,7 @@ __fastcall TInterfaceS2A::TInterfaceS2A(TComponent* Owner)
 		UpdateLog->WriteBool("NewVersion", "detected", false);
 		}
   //launch Light & open Blockly@rduino
-  BrowserLaunch(0);
+  BrowserRelaunch(0);
   ThreadDetectBrowserClose->Resume();
   Sleep(5000);
   delete SplashScreen;
@@ -201,7 +206,14 @@ __fastcall TInterfaceS2A::TInterfaceS2A(TComponent* Owner)
 
 //-------------------------relance le navigateur---------------
 
-void __fastcall TInterfaceS2A::BrowserLaunch(TObject *Sender)
+void __fastcall TInterfaceS2A::BrowserLaunchClick(TObject *Sender)
+{
+BrowserRelaunch(0);
+}
+
+//-------------------------relance le navigateur---------------
+
+void __fastcall TInterfaceS2A::BrowserRelaunch(TObject *Sender)
 {
   ThreadDetectBrowserClose->Suspend(); //do not close Interface while restarting
   SendMessage(ShExecNwjs.hProcess, WM_CLOSE | WM_DESTROY, 0, 0);
@@ -420,17 +432,16 @@ ShellExecute(0, 0, "devmgmt.msc", 0, 0 , SW_HIDE );
 
 void __fastcall TInterfaceS2A::Langue1Click(TObject *Sender)
 {
-TerminateProcess(ShExecNwjs.hProcess, 0);
 INI->WriteInteger("langue", "langue", ((TMenuItem*)Sender)->Tag);
 langue->Change(((TMenuItem*)Sender)->Tag);
 choix_langue = ((TMenuItem*)Sender)->Tag;
-BrowserLaunch(0);
+BrowserRelaunch(0);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TInterfaceS2A::InitClick(TObject *Sender)
 {
-DeleteFile("blocklyarduino.ini");
+DeleteFile("blocklyArduino.ini");
 InitINI();
 }
 //---------------------------------------------------------------------------
@@ -439,13 +450,6 @@ void __fastcall TInterfaceS2A::SiteofficielArduino1Click(TObject *Sender)
 {
 ShellExecute(0, 0, "http://arduino.cc/en/Main/Software", 0, 0 , SW_SHOW );
 }
-//---------------------------------------------------------------------------
-
-void __fastcall TInterfaceS2A::lchargerlesdrivers1Click(TObject *Sender)
-{
-ShellExecute(0, 0, "https://github.com/technologiescollege/ressources/tree/master/drivers", 0, 0 , SW_SHOW );
-}
-
 //---------------------------------------------------------------------------
 
 void __fastcall TInterfaceS2A::Localiserledossierdocumentation1Click(TObject *Sender)
@@ -628,12 +632,6 @@ StopProcess();
 ThreadTestArduino->Terminate();
 ThreadDetectBrowserClose->Terminate();
 WaitForSingleObject(ThreadTestArduino, INFINITE);
-
-/*PostMessage(ShExecNwjs.hProcess,WM_CLOSE,0,0);
-Sleep(1000);
-TerminateProcess(ShExecNwjs.hProcess, 0);
-CloseServiceHandle(ShExecNwjs.hProcess);
-CloseHandle(ShExecNwjs.hProcess);*/
 }
 //---------------------------------------------------------------------------
 
@@ -691,16 +689,14 @@ SplashUpdate->Label1->Visible = true;
 SplashUpdate->Repaint();
 Sleep(1000);
 //stop everything
-ThreadDetectBrowserClose->Suspend();
 TerminateProcess(ShExecRDuino.hProcess, 0);
 TerminateProcess(ShExecPymata.hProcess, 0);
-TerminateProcess(ShExecNwjs.hProcess, 0);
 SplashUpdate->Label2->Caption = Popup->Items->Strings[13];
 SplashUpdate->Label2->Visible = true;
 SplashUpdate->Repaint();
 //get from Github
 AnsiString ligne_cmd = ExtractFilePath(Application->ExeName) + "tools\\wget\\wget.exe";
-AnsiString ligne_cmd_arg = "https://github.com/technologiescollege/Blockly-at-rduino/archive/gh-pages.zip -o log.txt --no-check-certificate ";
+AnsiString ligne_cmd_arg = "https://github.com/technologiescollege/Blockly-at-rduino/archive/gh-pages.zip -o tools\\log.txt --no-check-certificate ";
 if (InterfaceS2A->INI->ReadString("proxy", "IP", NULL) == NULL)
 	ligne_cmd_arg += "--no-proxy";
 	else
@@ -727,69 +723,80 @@ while (isRunningPID) {
 	Sleep(200);
 	isRunningPID = TestRunning(PID_update);
 	}
-UpdateLog->WriteBool("Download", "finished", true);
-//move file after download
-MoveFile((ExtractFilePath(Application->ExeName) + "log.txt").c_str(), (ExtractFilePath(Application->ExeName) + "tools\\wget\\log.txt").c_str());
-//unzip file from Github
-RenameFile((ExtractFilePath(Application->ExeName) + "gh-pages").c_str(), (ExtractFilePath(Application->ExeName) + "gh-pages.zip").c_str());
-Sleep(500);
-UpdateLog->WriteBool("Ready to unzip", "file ready", true);
-SplashUpdate->Label3->Caption = Popup->Items->Strings[14];
-SplashUpdate->Label3->Visible = true;
-SplashUpdate->Repaint();
-//need to add path with "file_path_wtih_space"
-ligne_cmd = ExtractFilePath(Application->ExeName) + "tools\\7z.exe";
-ligne_cmd_arg = " x -y ";
-ligne_cmd_arg += '"';
-ligne_cmd_arg += ExtractFilePath(Application->ExeName) + "gh-pages.zip";
-ligne_cmd_arg += '"';
-ShExecUpdate.cbSize = sizeof(SHELLEXECUTEINFO);
-	ShExecUpdate.fMask = SEE_MASK_NOCLOSEPROCESS;
-	ShExecUpdate.hwnd = NULL;
-	ShExecUpdate.lpVerb = NULL;
-	ShExecUpdate.lpFile = ligne_cmd.c_str();
-	ShExecUpdate.lpParameters = ligne_cmd_arg.c_str();
-	ShExecUpdate.lpDirectory = ExtractFilePath(Application->ExeName).c_str();
-	if (voirDOS) ShExecUpdate.nShow = SW_SHOW;
-	if (!voirDOS) ShExecUpdate.nShow = SW_HIDE;
-	ShExecUpdate.hInstApp = NULL;
-ShellExecuteEx(&ShExecUpdate);
-PID_update = GetProcessId(ShExecUpdate.hProcess);
-isRunningPID = true;
-while (isRunningPID) {
-	Sleep(200);
-	isRunningPID = TestRunning(PID_update);
-	}
-UpdateLog->WriteBool("Unzip", "new Blockly@rduino", true);
-SplashUpdate->Label4->Caption = Popup->Items->Strings[15];
-SplashUpdate->Label4->Visible = true;
-SplashUpdate->Repaint();
-//delete old folder
-SHFILEOPSTRUCT stFileOp;
-ZeroMemory(&stFileOp, sizeof(stFileOp));
-stFileOp.wFunc = FO_DELETE;
-stFileOp.fFlags = FOF_SILENT | FOF_NOCONFIRMATION;
-stFileOp.hwnd = Application->Handle;
-stFileOp.pFrom = (ExtractFilePath(Application->ExeName) + "wwwBlockly@rduino\0").c_str();
-SHFileOperation(&stFileOp);
-UpdateLog->WriteBool("Delete", "no more wwwBlockly@rduino", true);
-//clean
-RenameFile(ExtractFilePath(Application->ExeName) + "Blockly-at-rduino-gh-pages\\", ExtractFilePath(Application->ExeName) + "wwwBlockly@rduino\\");
-DeleteFile((ExtractFilePath(Application->ExeName) + "gh-pages.zip").c_str());
-UpdateLog->WriteBool("Clean", "everything ok", true); 
-SplashUpdate->Label5->Caption = Popup->Items->Strings[16];
-SplashUpdate->Label5->Visible = true;
-SplashUpdate->Repaint();
-Sleep(2000);
+    
+if (fopen("gh-pages.zip", "r") != NULL) {
+   UpdateLog->WriteBool("Download", "finished", true);
+   //move file after download
+   MoveFile((ExtractFilePath(Application->ExeName) + "tools\\log.txt").c_str(), (ExtractFilePath(Application->ExeName) + "tools\\wget\\log.txt").c_str());
+   //unzip file from Github
+   RenameFile((ExtractFilePath(Application->ExeName) + "gh-pages").c_str(), (ExtractFilePath(Application->ExeName) + "gh-pages.zip").c_str());
+   Sleep(500);
+   UpdateLog->WriteBool("Ready to unzip", "file ready", true);
+   SplashUpdate->Label3->Caption = Popup->Items->Strings[14];
+   SplashUpdate->Label3->Visible = true;
+   SplashUpdate->Repaint();
+   //need to add path with "file_path_wtih_space"
+   ligne_cmd = ExtractFilePath(Application->ExeName) + "tools\\7z.exe";
+   ligne_cmd_arg = " x -y ";
+   ligne_cmd_arg += '"';
+   ligne_cmd_arg += ExtractFilePath(Application->ExeName) + "gh-pages.zip";
+   ligne_cmd_arg += '"';
+   ShExecUpdate.cbSize = sizeof(SHELLEXECUTEINFO);
+     ShExecUpdate.fMask = SEE_MASK_NOCLOSEPROCESS;
+     ShExecUpdate.hwnd = NULL;
+	 ShExecUpdate.lpVerb = NULL;
+	 ShExecUpdate.lpFile = ligne_cmd.c_str();
+	 ShExecUpdate.lpParameters = ligne_cmd_arg.c_str();
+	 ShExecUpdate.lpDirectory = ExtractFilePath(Application->ExeName).c_str();
+	 if (voirDOS) ShExecUpdate.nShow = SW_SHOW;
+	 if (!voirDOS) ShExecUpdate.nShow = SW_HIDE;
+	 ShExecUpdate.hInstApp = NULL;
+   ShellExecuteEx(&ShExecUpdate);
+   PID_update = GetProcessId(ShExecUpdate.hProcess);
+   isRunningPID = true;
+   while (isRunningPID) {
+         Sleep(200);
+         isRunningPID = TestRunning(PID_update);
+         }
+   UpdateLog->WriteBool("Unzip", "new Blockly@rduino", true);
+   SplashUpdate->Label4->Caption = Popup->Items->Strings[15];
+   SplashUpdate->Label4->Visible = true;
+   SplashUpdate->Repaint();
+   //delete old folder
+   SHFILEOPSTRUCT stFileOp;
+   ZeroMemory(&stFileOp, sizeof(stFileOp));
+   stFileOp.wFunc = FO_DELETE;
+   stFileOp.fFlags = FOF_SILENT | FOF_NOCONFIRMATION;
+   stFileOp.hwnd = Application->Handle;
+   stFileOp.pFrom = (ExtractFilePath(Application->ExeName) + "wwwBlockly@rduino\0").c_str();
+   SHFileOperation(&stFileOp);
+   UpdateLog->WriteBool("Delete", "no more wwwBlockly@rduino", true);
+   //clean
+   RenameFile(ExtractFilePath(Application->ExeName) + "Blockly-at-rduino-gh-pages\\", ExtractFilePath(Application->ExeName) + "wwwBlockly@rduino\\");
+   DeleteFile((ExtractFilePath(Application->ExeName) + "gh-pages.zip").c_str());
+   UpdateLog->WriteBool("Clean", "everything ok", true);
+   SplashUpdate->Label5->Caption = Popup->Items->Strings[16];
+   SplashUpdate->Label5->Visible = true;
+   SplashUpdate->Repaint();
+   Sleep(2000);
+   updateMenu->Checked = false;
+   UpdateLog->WriteBool("NewVersion", "detected", false);
+   BrowserRelaunch(0);
+    } else {
+      ShowMessage(Popup->Items->Strings[21]);
+      UpdateLog->WriteBool("Download", "finished", false);
+      UpdateLog->WriteBool("Ready to unzip", "file ready", false);
+      UpdateLog->WriteBool("Unzip", "new Blockly@rduino", false);
+      UpdateLog->WriteBool("Delete", "no more wwwBlockly@rduino", false);
+      UpdateLog->WriteBool("Clean", "everything ok", false);
+      UpdateLog->WriteBool("NewVersion", "detected", true);
+   }   
 SplashUpdate->Close();
 delete SplashUpdate;
-updateMenu->Checked = false;
-UpdateLog->WriteBool("NewVersion", "detected", false);
-BrowserLaunch(0);
 }
 //---------------------------------------------------------------------------
 bool TInterfaceS2A::TestRunning(int pid)
- {   
+ {
    HANDLE pss = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
    PROCESSENTRY32 pe = { 0 };
    pe.dwSize = sizeof(pe);
@@ -809,7 +816,7 @@ bool TInterfaceS2A::TestRunning(int pid)
 bool TInterfaceS2A::CompareVersion()
 {
 AnsiString ligne_cmd = ExtractFilePath(Application->ExeName) + "tools\\wget\\wget.exe";
-AnsiString ligne_cmd_arg = "https://raw.githubusercontent.com/technologiescollege/Blockly-at-rduino/gh-pages/core_BlocklyArduino/version.txt -o log.txt --no-check-certificate ";
+AnsiString ligne_cmd_arg = "https://raw.githubusercontent.com/technologiescollege/Blockly-at-rduino/gh-pages/core_BlocklyArduino/version.txt -o tools\\updateAuto.log --no-check-certificate ";
 
 if (InterfaceS2A->INI->ReadString("proxy", "IP", NULL) == NULL)
 	ligne_cmd_arg += "--no-proxy";
@@ -831,32 +838,27 @@ ShExecUpdate.cbSize = sizeof(SHELLEXECUTEINFO);
 	ShExecUpdate.hInstApp = NULL;
 ShellExecuteEx(&ShExecUpdate);
 PID_update = GetProcessId(ShExecUpdate.hProcess);
+
 bool isRunningPID = true;
 while (isRunningPID) {
-	Sleep(200);
-	isRunningPID = TestRunning(PID_update);
-	}
+   	Sleep(200);
+   	isRunningPID = TestRunning(PID_update);
+   	}
 UpdateLog->WriteBool("Compare", "everything ok", true);
 
-char contenu[9];
+INI_Version_new = new TIniFile(ExtractFilePath(Application->ExeName)+ "version.txt");
+INI_Version_old = new TIniFile(ExtractFilePath(Application->ExeName)+ "tools\\version.txt");
 int GitVersionDist;
 int GitVersionLoc;
-
-fstream fichierNew((ExtractFilePath(Application->ExeName) + "version.txt").c_str(), ios_base::in);
-fichierNew.seekg(0);
-fichierNew.getline(contenu, 9);
-GitVersionDist = StrToInt(contenu);
-UpdateLog->WriteInteger("fichierNew", "version", GitVersionDist);
-fichierNew.close();
-fstream fichierOld((ExtractFilePath(Application->ExeName) + "wwwBlockly@rduino\\core_BlocklyArduino\\version.txt").c_str(), ios_base::in);
-fichierOld.seekg(0);
-fichierOld.getline(contenu, 9);
-GitVersionLoc = StrToInt(contenu);
-UpdateLog->WriteInteger("fichierOld", "version", GitVersionLoc);
-fichierOld.close();
-DeleteFile((ExtractFilePath(Application->ExeName) + "version.txt").c_str());
-if (GitVersionDist > GitVersionLoc) return true;
-	else return false;
+if (fopen("version.txt", "r") != NULL) {
+   GitVersionDist = INI_Version_new->ReadInteger("update", "date", 0);
+   GitVersionLoc = INI_Version_old->ReadInteger("update", "date", 0);
+   DeleteFile("version.txt");
+   UpdateLog->WriteInteger("fichierOld", "version", GitVersionLoc);
+   if (GitVersionDist > GitVersionLoc) return true;
+      else return false;
+   }                    
+   else return false;
 }
 
 //---------------------------------------------------------------------------
@@ -876,4 +878,6 @@ FormProxy->Show();
 FormProxy->Repaint();
 }
 //---------------------------------------------------------------------------
+
+
 

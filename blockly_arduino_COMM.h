@@ -94,7 +94,6 @@ __published:	// Composants gérés par l'EDI
 	void __fastcall DocsClick(TObject *Sender);
 	void __fastcall InitClick(TObject *Sender);
 	void __fastcall SiteofficielArduino1Click(TObject *Sender);
-	void __fastcall lchargerlesdrivers1Click(TObject *Sender);
 	void __fastcall Localiserledossierdocumentation1Click(TObject *Sender);
 	void __fastcall Firmata_UnoClick(TObject *Sender);
 	void __fastcall Firmata_MegaClick(TObject *Sender);
@@ -109,7 +108,8 @@ __published:	// Composants gérés par l'EDI
 	void __fastcall SiteofficielderDuinoUploaderClick(TObject *Sender);
 	void __fastcall StopperrDuino1Click(TObject *Sender);
 	void __fastcall Stopperlacommunication1Click(TObject *Sender);
-	void __fastcall BrowserLaunch(TObject *Sender);
+	void __fastcall BrowserLaunchClick(TObject *Sender);                
+	void __fastcall BrowserRelaunch(TObject *Sender);
 	void __fastcall GetOSversion(TObject *Sender);
 	void __fastcall Forum1Click(TObject *Sender);
 	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
@@ -119,6 +119,8 @@ __published:	// Composants gérés par l'EDI
 	void __fastcall proxyUpdateClick(TObject *Sender);
 	//void __fastcall MenuUnconnectConnect2(TObject *Sender);
 private:	// Déclarations de l'utilisateur
+	TIniFile *INI_Version_old;
+	TIniFile *INI_Version_new;
 	TLabel * interLabel ;
 	TButton * interButton ;
 	TInterfaceS2A * interInterfaceS2A ;
